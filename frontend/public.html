@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Public Transparency Portal</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{background:#f4f6f9;font-family:Arial;}
+.header{background:#0b1a2f;color:white;padding:30px;text-align:center;}
+.stat-card{background:white;border-radius:10px;padding:20px;text-align:center;box-shadow:0 3px 10px rgba(0,0,0,0.1);}
+.badge-pending{background:orange;}
+.badge-progress{background:blue;}
+.badge-resolved{background:green;}
+.feed-card{background:white;padding:15px;border-radius:8px;margin-bottom:10px;}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h2>🌍 Public Transparency Portal</h2>
+<p>Real-Time Governance Dashboard</p>
+</div>
+
+<div class="container mt-4">
+
+<!-- STATISTICS -->
+<div class="row text-center">
+
+<div class="col-md-3">
+<div class="stat-card">
+<h5>Total Complaints</h5>
+<h3 id="total">0</h3>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="stat-card">
+<h5>Pending</h5>
+<h3 id="pending">0</h3>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="stat-card">
+<h5>In Progress</h5>
+<h3 id="progress">0</h3>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="stat-card">
+<h5>Resolved</h5>
+<h3 id="resolved">0</h3>
+</div>
+</div>
+
+</div>
+
+<!-- DEPARTMENT CHART -->
+<div class="card mt-5 p-4">
+<h4>📊 Complaints by Department</h4>
+<canvas id="deptChart"></canvas>
+</div>
+
+<!-- LIVE FEED -->
+<h4 class="mt-5">📢 Live Complaint Feed</h4>
+<div id="feed"></div>
+
+</div>
+
+<script>
+async function load(){
+
+let res = await fetch("http://127.0.0.1:5000/complaints/all");
+let data = await res.json();
+
+// Stats
+document.getElementById("total").innerText = data.length;
+document.getElementById("pending").innerText = data.filter(d=>d.status=="Pending").length;
+document.getElementById("progress").innerText = data.filter(d=>d.status=="In Progress").length;
+document.getElementById("resolved").innerText = data.filter(d=>d.status=="Resolved").length;
+
+// Department count
+let deptCount = {};
+data.forEach(c=>{
+deptCount[c.department] = (deptCount[c.department] || 0) + 1;
+});
+
+let labels = Object.keys(deptCount);
+let values = Object.values(deptCount);
+
+// Chart
+new Chart(document.getElementById("deptChart"), {
+type: "bar",
+data: {
+labels: labels,
+datasets: [{
+label: "Complaints",
+data: values,
+backgroundColor: ["#0d6efd","#ffc107","#198754","#dc3545","#6f42c1"]
+}]
+}
+});
+
+// Live Feed
+let feedHTML="";
+
+data.reverse().forEach(c=>{
+
+let badgeClass="badge-pending";
+if(c.status=="Resolved") badgeClass="badge-resolved";
+else if(c.status=="In Progress") badgeClass="badge-progress";
+
+feedHTML+=`
+<div class="feed-card">
+
+<b style="font-size:18px">${c.name}</b> - ${c.title}<br>
+
+Department: <b>${c.department}</b><br>
+📍 Location: ${c.location}<br>
+
+👨‍💼 Assigned Officer:
+<b style="color:green">
+${c.assignedTo && c.assignedTo !== "Not Assigned" ? c.assignedTo : "Not Assigned Yet"}
+</b><br>
+
+📅 Deadline:
+<b style="color:red">
+${c.deadline ? new Date(c.deadline).toLocaleString() : "No deadline"}
+</b><br>
+
+Status:
+<span class="badge ${badgeClass}">${c.status}</span>
+
+${c.feedback ? `
+<hr>
+⭐ Citizen Rating: <b>${c.rating}/5</b><br>
+💬 Feedback: <i>"${c.feedback}"</i>
+` : ""}
+
+</div>
+`;
+
+});
+
+document.getElementById("feed").innerHTML = feedHTML;
+
+}
+
+load();
+</script>
+
+</body>
+</html>

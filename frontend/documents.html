@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Document Manager</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+
+<div class="container mt-5">
+<h2>Smart Document Upload</h2>
+
+<input type="text" id="complaintId" class="form-control w-50 my-2" placeholder="Enter Complaint ID">
+<input type="file" id="fileInput" class="form-control w-50 my-2">
+
+<button onclick="uploadDoc()" class="btn btn-primary">Upload Document</button>
+
+<h4 class="mt-5">Stored Documents</h4>
+
+<table class="table">
+<thead>
+<tr>
+<th>File</th>
+<th>Category</th>
+<th>Complaint ID</th>
+</tr>
+</thead>
+<tbody id="docTable"></tbody>
+</table>
+
+</div>
+
+<script>
+// upload document
+function uploadDoc(){
+let file=document.getElementById("fileInput").files[0];
+let complaintId=document.getElementById("complaintId").value;
+
+let formData=new FormData();
+formData.append("file",file);
+formData.append("complaintId",complaintId);
+
+fetch("http://localhost:5000/documents/upload",{
+method:"POST",
+body:formData
+})
+.then(res=>res.json())
+.then(data=>{
+alert("Uploaded! Category: "+data.category);
+loadDocs();
+});
+}
+
+// load documents
+function loadDocs(){
+fetch("http://localhost:5000/documents/all")
+.then(res=>res.json())
+.then(data=>{
+let html="";
+data.forEach(d=>{
+html+=`
+<tr>
+<td>${d.filename}</td>
+<td>${d.category}</td>
+<td>${d.complaintId}</td>
+</tr>`;
+});
+document.getElementById("docTable").innerHTML=html;
+});
+}
+
+loadDocs();
+</script>
+
+</body>
+</html>

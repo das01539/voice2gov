@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Command Center</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-4">
+
+<h2>🏛 Government Command Center</h2>
+
+<div class="row mt-4">
+
+<div class="col-md-3">
+<div class="card p-3 text-center">
+<h5>Total</h5>
+<h2 id="total">0</h2>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 text-center">
+<h5>Pending</h5>
+<h2 id="pending">0</h2>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 text-center">
+<h5>In Progress</h5>
+<h2 id="progress">0</h2>
+</div>
+</div>
+
+<div class="col-md-3">
+<div class="card p-3 text-center">
+<h5>Resolved</h5>
+<h2 id="resolved">0</h2>
+</div>
+</div>
+
+</div>
+
+
+<h4 class="mt-5">📋 All Complaints</h4>
+<table class="table table-bordered mt-3">
+<thead>
+<tr>
+<th>Name</th>
+<th>Department</th>
+<th>Issue</th>
+<th>Status</th>
+<th>Assign</th>
+<th>Resolve</th>
+<th>Upload Proof</th>
+</tr>
+</thead>
+
+<tbody id="table"></tbody>
+</table>
+
+</div>
+
+
+<script>
+async function load(){
+
+let res = await fetch("http://localhost:5000/complaints/all");
+let data = await res.json();
+
+document.getElementById("total").innerText = data.length;
+
+let pending = data.filter(d=>d.status=="Pending").length;
+let progress = data.filter(d=>d.status=="In Progress").length;
+let resolved = data.filter(d=>d.status=="Resolved").length;
+
+document.getElementById("pending").innerText=pending;
+document.getElementById("progress").innerText=progress;
+document.getElementById("resolved").innerText=resolved;
+
+let html="";
+
+data.forEach(c=>{
+html+=`
+<tr>
+<td>${c.name}</td>
+<td>${c.department}</td>
+<td>${c.title}</td>
+<td><b>${c.status}</b></td>
+
+<td>
+<input placeholder="staff name" id="staff${c._id}" class="form-control mb-1">
+
+<input type="datetime-local" id="deadline${c._id}" class="form-control mb-1">
+
+<button onclick="assign('${c._id}')" class="btn btn-warning btn-sm">
+Assign + Deadline
+</button>
+</td>
+
+<td>
+<button onclick="resolve('${c._id}')" class="btn btn-success btn-sm">Resolve</button>
+</td>
+
+<td>
+<input type="file" id="file${c._id}" class="form-control mb-1">
+<button onclick="uploadDoc('${c._id}')" class="btn btn-dark btn-sm">
+Upload
+</button>
+
+${c.document ? `<br><a href="http://localhost:5000/uploads/${c.document}" target="_blank">📎 View</a>` : ""}
+</td>
+
+</tr>
+`;
+});
+
+document.getElementById("table").innerHTML=html;
+}
+
+load();
+
+async function assign(id){
+let staff=document.getElementById("staff"+id).value;
+let deadline=document.getElementById("deadline"+id).value;
+
+await fetch("http://localhost:5000/complaints/assign/"+id,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({staff,deadline})
+});
+
+alert("Assigned with deadline");
+load();
+}
+
+async function resolve(id){
+await fetch("http://localhost:5000/complaints/resolve/"+id,{
+method:"PUT"
+});
+alert("Resolved");
+load();
+}
+
+async function uploadDoc(id){
+let fileInput=document.getElementById("file"+id);
+let formData=new FormData();
+formData.append("file",fileInput.files[0]);
+
+await fetch("http://localhost:5000/complaints/upload/"+id,{
+method:"POST",
+body:formData
+});
+
+alert("Document uploaded");
+load();
+}
+</script>
+
+</body>
+</html>

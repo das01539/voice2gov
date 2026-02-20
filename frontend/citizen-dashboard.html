@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Citizen Dashboard</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body{background:#f4f6f9;font-family:Arial;}
+
+.sidebar{
+background:#0b1a2f;
+color:white;
+height:100vh;
+padding:20px;
+}
+.sidebar a{
+display:block;
+color:white;
+padding:10px;
+text-decoration:none;
+margin:5px 0;
+}
+.sidebar a:hover{background:#1f3b73;}
+
+.status-progress{color:blue;font-weight:bold;}
+.status-resolved{color:green;font-weight:bold;}
+.feedback-box{background:#fff3cd;padding:10px;border-radius:8px;}
+</style>
+</head>
+
+<body>
+
+<div class="row">
+
+<!-- SIDEBAR -->
+<div class="col-md-2 sidebar">
+<h4>Civic Panel</h4>
+<a href="#">Dashboard</a>
+<a href="submit-complaint.html">Submit Complaint</a>
+<a href="#">My Complaints</a>
+<a href="login.html">Logout</a>
+</div>
+
+<!-- MAIN -->
+<div class="col-md-10 p-4">
+
+<h3>My Complaints</h3>
+
+<table class="table table-bordered">
+<thead>
+<tr>
+<th>Title</th>
+<th>Department</th>
+<th>Status</th>
+<th>Feedback</th>
+</tr>
+</thead>
+
+<tbody id="myTable"></tbody>
+</table>
+
+</div>
+</div>
+
+
+<script>
+async function loadMyComplaints(){
+
+let email = localStorage.getItem("userEmail"); // saved during login
+
+let res = await fetch("http://localhost:5000/complaints/all");
+let data = await res.json();
+
+// show only logged-in user complaints
+data = data.filter(c => c.contact == email);
+
+let html="";
+
+data.forEach(c=>{
+
+let feedbackSection="";
+
+if(c.status=="Resolved" && !c.feedback){
+feedbackSection=`
+<div class="feedback-box">
+<input id="fb${c._id}" class="form-control mb-1" placeholder="Write feedback">
+<select id="rate${c._id}" class="form-control mb-1">
+<option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+<option value="4">⭐⭐⭐⭐ Good</option>
+<option value="3">⭐⭐⭐ Average</option>
+<option value="2">⭐⭐ Poor</option>
+<option value="1">⭐ Bad</option>
+</select>
+<button class="btn btn-success btn-sm" onclick="submitFeedback('${c._id}')">
+Submit
+</button>
+</div>`;
+}
+
+else if(c.feedback){
+feedbackSection=`⭐ ${c.rating}/5 <br> ${c.feedback}`;
+}
+else{
+feedbackSection="Waiting for resolution";
+}
+
+html+=`
+<tr>
+<td>${c.title}</td>
+<td>${c.department}</td>
+<td><b>${c.status}</b></td>
+<td>${feedbackSection}</td>
+</tr>
+`;
+});
+
+document.getElementById("myTable").innerHTML=html;
+}
+
+loadMyComplaints();
+
+
+// submit feedback
+async function submitFeedback(id){
+
+let feedback=document.getElementById("fb"+id).value;
+let rating=document.getElementById("rate"+id).value;
+
+await fetch("http://localhost:5000/complaints/feedback/"+id,{
+method:"PUT",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({feedback,rating})
+});
+
+alert("Feedback submitted 🙏");
+loadMyComplaints();
+}
+</script>
+
+</body>
+</html>

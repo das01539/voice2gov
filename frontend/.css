@@ -1,0 +1,42 @@
+body{
+    background:#f8fafc;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.navbar{
+    background:#0B5ED7;
+}
+
+.navbar-brand, .nav-link, .navbar-text{
+    color:white !important;
+}
+
+.card{
+    border:none;
+    border-radius:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+.sidebar{
+    height:100vh;
+    background:#0F172A;
+    color:white;
+    padding:20px;
+}
+
+.sidebar a{
+    display:block;
+    color:white;
+    padding:10px;
+    margin:5px 0;
+    text-decoration:none;
+    border-radius:8px;
+}
+
+.sidebar a:hover{
+    background:#0B5ED7;
+}
+
+.status-pending{color:red;font-weight:bold;}
+.status-progress{color:orange;font-weight:bold;}
+.status-resolved{color:green;font-weight:bold;}
